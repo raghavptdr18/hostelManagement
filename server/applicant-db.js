@@ -154,7 +154,7 @@ const save_fees_details = async (req, res, next) => {
           if (f[0].fieldname === "fees_pdf") {
             await pool.query(
               "UPDATE fees_records_table SET fees_pdf_url = $1 WHERE email_id = $2 and fees_id=$3;",
-              [url, info.email,info.fees_id]
+              [url, info.email, info.fees_id]
             );
           }
           resolve();
@@ -271,7 +271,7 @@ const get_profile_info = async (req, res) => {
    * Verify using authToken
    */
   authToken = req.headers.authorization;
-  let jwtSecretKey = process.env.JWT_SECRET_KEY; 
+  let jwtSecretKey = process.env.JWT_SECRET_KEY;
 
   var verified = null;
 
@@ -448,6 +448,155 @@ const get_user_email = async (req, res) => {
   return res.send(results.rows[0]);
 };
 
+
+
+async function get_complaints(req, res) {
+
+  /**
+   * Verify using authToken
+   */
+  authToken = req.headers.authorization;
+  let jwtSecretKey = process.env.JWT_SECRET_KEY;
+
+  var verified = null;
+
+  try {
+    verified = jwt.verify(authToken, jwtSecretKey);
+  } catch (error) {
+    return res.send("1"); /** Error, logout on user side */
+  }
+
+  if (!verified) {
+    return res.send("1"); /** Error, logout on user side */
+  }
+
+  const { id } = req.params;
+  try {
+    const { rows } = await pool.query("SELECT * FROM complaint_details WHERE complaint_id=$1", [id]);
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error getting the complaint.");
+  }
+}
+
+async function get_my_complaints(req, res) {
+
+  /**
+   * Verify using authToken
+   */
+  authToken = req.headers.authorization;
+  let jwtSecretKey = process.env.JWT_SECRET_KEY;
+
+  var verified = null;
+
+  try {
+    verified = jwt.verify(authToken, jwtSecretKey);
+  } catch (error) {
+    return res.send("1"); /** Error, logout on user side */
+  }
+
+  if (!verified) {
+    return res.send("1"); /** Error, logout on user side */
+  }
+
+  const { id } = req.params;
+
+  try {
+    const { rows } = await pool.query("SELECT * FROM complaint_details WHERE email_id=$1", [id]);
+
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error getting the complaint.");
+  }
+}
+
+
+
+async function solveIt(req, res) {
+
+  /**
+   * Verify using authToken
+   */
+  authToken = req.headers.authorization;
+  let jwtSecretKey = process.env.JWT_SECRET_KEY;
+
+  var verified = null;
+
+  try {
+    verified = jwt.verify(authToken, jwtSecretKey);
+  } catch (error) {
+    return res.send("1"); /** Error, logout on user side */
+  }
+
+  if (!verified) {
+    return res.send("1"); /** Error, logout on user side */
+  }
+
+  const { id } = req.params;
+
+  try {
+    const { rowCount } = await pool.query("UPDATE complaint_details SET complaint_status='done' WHERE complaint_id=$1", [id]);
+
+    if (rowCount === 1) {
+      res.status(200).send(`Complaint with id ${id} has been marked as solved`);
+    } else {
+      res.status(404).send(`Complaint with id ${id} not found`);
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error updating complaint status.");
+  }
+}
+
+
+
+async function save_data(req, res) {
+
+  /**
+   * Verify using authToken
+   */
+  authToken = req.headers.authorization;
+  let jwtSecretKey = process.env.JWT_SECRET_KEY;
+
+  var verified = null;
+
+  try {
+    verified = jwt.verify(authToken, jwtSecretKey);
+  } catch (error) {
+    return res.send("1"); /** Error, logout on user side */
+  }
+
+  if (!verified) {
+    return res.send("1"); /** Error, logout on user side */
+  }
+
+  var info = req.body;
+
+  try {
+    await pool.query("INSERT INTO complaint_details(name, email_id, hostel_name,wing_side,room_number,floor_number,complaint_type,complaint_details) VALUES($1,$2,$3,$4,$5,$6,$7,$8);",
+      [
+        info.username,
+        info.emailid,
+        info.hostel,
+        info.wing,
+        info.room,
+        info.floor,
+        info.complainttype,
+        info.complaint,
+      ]
+    );
+
+    res.status(200).send("Complaint successfully registered.");
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error registering complaint.");
+  }
+}
+
+
 module.exports = {
   save_personal_info,
   save_communication_details,
@@ -457,4 +606,8 @@ module.exports = {
   save_fees_details,
   get_fees_history,
   get_fees_info,
+  save_data,
+  get_complaints,
+  get_my_complaints,
+  solveIt
 };

@@ -803,6 +803,63 @@ const view_excel = async (req, res) => {
   return res.send("2");
 };
 
+async function get_all_complaints(req, res) {
+
+  /**
+   * Verify using authToken
+   */
+  authToken = req.headers.authorization;
+  let jwtSecretKey = process.env.JWT_SECRET_KEY;
+
+  var verified = null;
+
+  try {
+    verified = jwt.verify(authToken, jwtSecretKey);
+  } catch (error) {
+    return res.send("1"); /** Error, logout on user side */
+  }
+
+  if (!verified) {
+    return res.send("1"); /** Error, logout on user side */
+  }
+
+  try {
+    const { rows } = await pool.query("SELECT * FROM complaint_details");
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error getting all complaints.");
+  }
+}
+
+async function get_all_solved_complaints(req, res) {
+  /**
+   * Verify using authToken
+   */
+  authToken = req.headers.authorization;
+  let jwtSecretKey = process.env.JWT_SECRET_KEY;
+
+  var verified = null;
+
+  try {
+    verified = jwt.verify(authToken, jwtSecretKey);
+  } catch (error) {
+    return res.send("1"); /** Error, logout on user side */
+  }
+
+  if (!verified) {
+    return res.send("1"); /** Error, logout on user side */
+  }
+
+  try {
+    const { rows } = await pool.query("SELECT * FROM complaint_details WHERE complaint_status='done'");
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error getting all complaints.");
+  }
+}
+
 module.exports = {
   add_admin,
   edit_admin,
@@ -820,4 +877,6 @@ module.exports = {
   get_students,
   delete_student,
   view_excel,
+  get_all_complaints,
+  get_all_solved_complaints,
 };
